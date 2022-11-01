@@ -9,8 +9,11 @@
     "preview": "vite preview"
   },
   "dependencies": {
+    "@hyperbeam/web": "^0.0.22",
+    "@react-three/fiber": "^8.9.0",
     "react": "^18.2.0",
-    "react-dom": "^18.2.0"
+    "react-dom": "^18.2.0",
+    "three": "^0.146.0"
   },
   "devDependencies": {
     "@types/react": "^18.0.22",

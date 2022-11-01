@@ -39,3 +39,8 @@
 .read-the-docs {
   color: #888;
 }
+
+.canvas-container {
+  position: fixed;
+  inset: 0;
+}
