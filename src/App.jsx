@@ -37,6 +37,7 @@ function Browser({ container, embedUrl, ...restProps }) {
               type: "mousedown",
               x: e.intersections[0].uv.x,
               y: e.intersections[0].uv.y,
+              button: e.button,
             });
           }
         }}
@@ -46,6 +47,7 @@ function Browser({ container, embedUrl, ...restProps }) {
               type: "mousemove",
               x: e.intersections[0].uv.x,
               y: e.intersections[0].uv.y,
+              button: e.button,
             });
           }
         }}
@@ -55,6 +57,7 @@ function Browser({ container, embedUrl, ...restProps }) {
               type: "mouseup",
               x: e.intersections[0].uv.x,
               y: e.intersections[0].uv.y,
+              button: e.button,
             });
           }
         }}
