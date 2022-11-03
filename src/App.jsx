@@ -5,10 +5,83 @@ import { useEffect, useRef, useState } from "react";
 import * as THREE from "three";
 import "./App.css";
 
-function App() {
-  const hyperbeamContainerRef = useRef(null);
-  const [texture, setTexture] = useState(new THREE.Texture());
+function Browser({ container, embedUrl, ...restProps }) {
   const [hyperbeam, setHyperbeam] = useState(null);
+  const [texture, setTexture] = useState(() => new THREE.Texture());
+
+  useEffect(() => {
+    (async () => {
+      setHyperbeam(
+        await Hyperbeam(container, embedUrl, {
+          frameCb: (frame) => {
+            const updatedTexture = new THREE.Texture();
+            updatedTexture.flipY = false;
+            updatedTexture.generateMipmaps = false;
+            updatedTexture.image = frame;
+            updatedTexture.needsUpdate = true;
+            setTexture(updatedTexture);
+          },
+        })
+      );
+    })();
+  }, [container, embedUrl]);
+
+  return (
+    hyperbeam && (
+      <mesh
+        {...restProps}
+        rotation={[0, Math.PI, Math.PI]}
+        onPointerDown={(e) => {
+          if (hyperbeam) {
+            hyperbeam.sendEvent({
+              type: "mousedown",
+              x: e.intersections[0].uv.x,
+              y: e.intersections[0].uv.y,
+            });
+          }
+        }}
+        onPointerMove={(e) => {
+          if (hyperbeam) {
+            hyperbeam.sendEvent({
+              type: "mousemove",
+              x: e.intersections[0].uv.x,
+              y: e.intersections[0].uv.y,
+            });
+          }
+        }}
+        onPointerUp={(e) => {
+          if (hyperbeam) {
+            hyperbeam.sendEvent({
+              type: "mouseup",
+              x: e.intersections[0].uv.x,
+              y: e.intersections[0].uv.y,
+            });
+          }
+        }}
+        onWheel={(e) => {
+          if (hyperbeam) {
+            hyperbeam.sendEvent({
+              type: "wheel",
+              deltaX: e.deltaX,
+              deltaY: e.deltaY,
+            });
+          }
+        }}
+      >
+        <planeGeometry attach="geometry" args={[10, (9 / 16) * 10]} />
+        <meshBasicMaterial
+          attach="material"
+          map={texture}
+          side={THREE.DoubleSide}
+        />
+      </mesh>
+    )
+  );
+}
+
+function App() {
+  const [embedUrl, setEmbedUrl] = useState("");
+  const hyperbeamContainerRef = useRef(null);
   const [isControlsEnabled, setIsControlsEnabled] = useState(true);
 
   useEffect(() => {
@@ -27,18 +100,7 @@ function App() {
       if (room !== body.room) {
         history.pushState(null, null, `/${body.room}${location.search}`);
       }
-      setHyperbeam(
-        await Hyperbeam(hyperbeamContainerRef.current, body.url, {
-          frameCb: (frame) => {
-            const texture = new THREE.Texture();
-            texture.flipY = false;
-            texture.generateMipmaps = false;
-            texture.image = frame;
-            texture.needsUpdate = true;
-            setTexture(texture);
-          },
-        })
-      );
+      setEmbedUrl(body.url);
     })();
   }, []);
 
@@ -47,54 +109,14 @@ function App() {
       <div className="hyperbeam-container" ref={hyperbeamContainerRef}></div>
       <div className="canvas-container">
         <Canvas>
-          <mesh
-            position={[0, 0, 0]}
-            rotation={[0, Math.PI, Math.PI]}
-            onPointerEnter={() => setIsControlsEnabled(false)}
-            onPointerLeave={() => setIsControlsEnabled(true)}
-            onPointerDown={(e) => {
-              if (hyperbeam) {
-                hyperbeam.sendEvent({
-                  type: "mousedown",
-                  x: e.intersections[0].uv.x,
-                  y: e.intersections[0].uv.y,
-                });
-              }
-            }}
-            onPointerMove={(e) => {
-              if (hyperbeam) {
-                hyperbeam.sendEvent({
-                  type: "mousemove",
-                  x: e.intersections[0].uv.x,
-                  y: e.intersections[0].uv.y,
-                });
-              }
-            }}
-            onPointerUp={(e) => {
-              if (hyperbeam) {
-                hyperbeam.sendEvent({
-                  type: "mouseup",
-                  x: e.intersections[0].uv.x,
-                  y: e.intersections[0].uv.y,
-                });
-              }
-            }}
-            onWheel={(e) => {
-              if (hyperbeam) {
-                hyperbeam.sendEvent({
-                  type: "wheel",
-                  deltaY: e.deltaY,
-                });
-              }
-            }}
-          >
-            <planeGeometry attach="geometry" args={[10, (9 / 16) * 10]} />
-            <meshBasicMaterial
-              attach="material"
-              map={texture}
-              side={THREE.DoubleSide}
+          {hyperbeamContainerRef.current && embedUrl && (
+            <Browser
+              container={hyperbeamContainerRef.current}
+              embedUrl={embedUrl}
+              onPointerEnter={() => setIsControlsEnabled(false)}
+              onPointerLeave={() => setIsControlsEnabled(true)}
             />
-          </mesh>
+          )}
           <OrbitControls makeDefault enabled={isControlsEnabled} />
         </Canvas>
       </div>
