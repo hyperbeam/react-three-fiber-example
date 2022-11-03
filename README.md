@@ -2,6 +2,11 @@
 
 Hyperbeam virtual computers in React Three Fiber!
 
+- [x] 🔉 Spatial audio
+- [x] 🖱️ Mouse, wheel, touch and keyboard events
+- [x] 💫 Orbit controls
+- [x] 🎮 Multiplayer
+
 ## Running locally
 
 Clone the repo and run:
