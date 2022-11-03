@@ -1,16 +1,27 @@
 import Hyperbeam from "@hyperbeam/web";
 import { OrbitControls } from "@react-three/drei";
-import { Canvas } from "@react-three/fiber";
+import { Canvas, useThree } from "@react-three/fiber";
 import { useEffect, useRef, useState } from "react";
 import * as THREE from "three";
 import "./App.css";
 
 function Browser({ container, embedUrl, ...restProps }) {
+  const audioRef = useRef(null);
   const [hyperbeam, setHyperbeam] = useState(null);
   const [texture, setTexture] = useState(() => new THREE.Texture());
+  const [listener, setListener] = useState(() => new THREE.AudioListener());
+  const { camera } = useThree();
+
+  useEffect(() => {
+    camera.add(listener);
+    return () => {
+      camera.remove(listener);
+    };
+  }, [camera, listener]);
 
   useEffect(() => {
     (async () => {
+      if (hyperbeam) return;
       setHyperbeam(
         await Hyperbeam(container, embedUrl, {
           frameCb: (frame) => {
@@ -21,71 +32,84 @@ function Browser({ container, embedUrl, ...restProps }) {
             updatedTexture.needsUpdate = true;
             setTexture(updatedTexture);
           },
+          audioTrackCb: (audioTrack) => {
+            audioRef.current.setMediaStreamSource(
+              new MediaStream([audioTrack])
+            );
+          },
         })
       );
     })();
   }, [container, embedUrl]);
 
   return (
-    hyperbeam && (
-      <mesh
-        {...restProps}
-        rotation={[0, Math.PI, Math.PI]}
-        onPointerDown={(e) => {
-          if (hyperbeam) {
-            hyperbeam.sendEvent({
-              type: "mousedown",
-              x: e.intersections[0].uv.x,
-              y: e.intersections[0].uv.y,
-              button: e.button,
-            });
-          }
-        }}
-        onPointerMove={(e) => {
-          if (hyperbeam) {
-            hyperbeam.sendEvent({
-              type: "mousemove",
-              x: e.intersections[0].uv.x,
-              y: e.intersections[0].uv.y,
-              button: e.button,
-            });
-          }
-        }}
-        onPointerUp={(e) => {
-          if (hyperbeam) {
-            hyperbeam.sendEvent({
-              type: "mouseup",
-              x: e.intersections[0].uv.x,
-              y: e.intersections[0].uv.y,
-              button: e.button,
-            });
-          }
-        }}
-        onWheel={(e) => {
-          if (hyperbeam) {
-            hyperbeam.sendEvent({
-              type: "wheel",
-              deltaX: e.deltaX,
-              deltaY: e.deltaY,
-            });
-          }
-        }}
-      >
-        <planeGeometry attach="geometry" args={[10, (9 / 16) * 10]} />
-        <meshBasicMaterial
-          attach="material"
-          map={texture}
-          side={THREE.DoubleSide}
-        />
-      </mesh>
-    )
+    <mesh
+      {...restProps}
+      rotation={[0, Math.PI, Math.PI]}
+      onPointerDown={(e) => {
+        if (hyperbeam) {
+          hyperbeam.sendEvent({
+            type: "mousedown",
+            x: e.intersections[0].uv.x,
+            y: e.intersections[0].uv.y,
+            button: e.button,
+          });
+        }
+        if (listener.context.state === "suspended") {
+          listener.context.resume();
+        }
+      }}
+      onPointerMove={(e) => {
+        if (hyperbeam) {
+          hyperbeam.sendEvent({
+            type: "mousemove",
+            x: e.intersections[0].uv.x,
+            y: e.intersections[0].uv.y,
+            button: e.button,
+          });
+        }
+      }}
+      onPointerUp={(e) => {
+        if (hyperbeam) {
+          hyperbeam.sendEvent({
+            type: "mouseup",
+            x: e.intersections[0].uv.x,
+            y: e.intersections[0].uv.y,
+            button: e.button,
+          });
+        }
+        if (listener.context.state === "suspended") {
+          listener.context.resume();
+        }
+      }}
+      onWheel={(e) => {
+        if (hyperbeam) {
+          hyperbeam.sendEvent({
+            type: "wheel",
+            deltaX: e.deltaX,
+            deltaY: e.deltaY,
+          });
+        }
+        if (listener.context.state === "suspended") {
+          listener.context.resume();
+        }
+      }}
+    >
+      <planeGeometry attach="geometry" args={[10, (9 / 16) * 10]} />
+      <meshBasicMaterial
+        attach="material"
+        map={texture}
+        side={THREE.DoubleSide}
+      />
+      <positionalAudio args={[listener]} ref={audioRef} />
+    </mesh>
   );
 }
 
 function App() {
   const [embedUrl, setEmbedUrl] = useState(""); // Running locally and have an embed URL? Paste it here!
+  const [areControlsEnabled, setAreControlsEnabled] = useState(true);
   const hyperbeamContainerRef = useRef(null);
-  const [isControlsEnabled, setIsControlsEnabled] = useState(true);
 
   useEffect(() => {
     (async () => {
@@ -119,11 +143,11 @@ function App() {
             <Browser
               container={hyperbeamContainerRef.current}
               embedUrl={embedUrl}
-              onPointerEnter={() => setIsControlsEnabled(false)}
-              onPointerLeave={() => setIsControlsEnabled(true)}
+              onPointerEnter={() => setAreControlsEnabled(false)}
+              onPointerLeave={() => setAreControlsEnabled(true)}
             />
           )}
-          <OrbitControls makeDefault enabled={isControlsEnabled} />
+          <OrbitControls makeDefault enabled={areControlsEnabled} />
         </Canvas>
       </div>
     </div>
