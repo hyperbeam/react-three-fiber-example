@@ -111,7 +111,7 @@ function App() {
     <div className="App">
       <div className="hyperbeam-container" ref={hyperbeamContainerRef}></div>
       <div className="canvas-container">
-        <Canvas>
+        <Canvas onContextMenu={(e) => e.preventDefault()}>
           {hyperbeamContainerRef.current && embedUrl && (
             <Browser
               container={hyperbeamContainerRef.current}
