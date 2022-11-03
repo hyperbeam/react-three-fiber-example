@@ -5,7 +5,7 @@ import { useEffect, useRef, useState } from "react";
 import * as THREE from "three";
 import "./App.css";
 
-function Browser({ container, embedUrl, ...restProps }) {
+function Browser({ container, embedUrl, onListenerUpdate, ...restProps }) {
   const audioRef = useRef(null);
   const [hyperbeam, setHyperbeam] = useState(null);
   const [texture, setTexture] = useState(() => new THREE.Texture());
@@ -14,8 +14,10 @@ function Browser({ container, embedUrl, ...restProps }) {
 
   useEffect(() => {
     camera.add(listener);
+    onListenerUpdate(listener);
     return () => {
       camera.remove(listener);
+      onListenerUpdate(null);
     };
   }, [camera, listener]);
 
@@ -55,9 +57,6 @@ function Browser({ container, embedUrl, ...restProps }) {
             button: e.button,
           });
         }
-        if (listener.context.state === "suspended") {
-          listener.context.resume();
-        }
       }}
       onPointerMove={(e) => {
         if (hyperbeam) {
@@ -78,9 +77,6 @@ function Browser({ container, embedUrl, ...restProps }) {
             button: e.button,
           });
         }
-        if (listener.context.state === "suspended") {
-          listener.context.resume();
-        }
       }}
       onWheel={(e) => {
         if (hyperbeam) {
@@ -89,9 +85,6 @@ function Browser({ container, embedUrl, ...restProps }) {
             deltaX: e.deltaX,
             deltaY: e.deltaY,
           });
-        }
-        if (listener.context.state === "suspended") {
-          listener.context.resume();
         }
       }}
     >
@@ -107,9 +100,10 @@ function Browser({ container, embedUrl, ...restProps }) {
 }
 
 function App() {
-  const [embedUrl, setEmbedUrl] = useState(""); // Running locally and have an embed URL? Paste it here!
-  const [areControlsEnabled, setAreControlsEnabled] = useState(true);
   const hyperbeamContainerRef = useRef(null);
+  const [areControlsEnabled, setAreControlsEnabled] = useState(true);
+  const [embedUrl, setEmbedUrl] = useState(""); // Running locally and have an embed URL? Paste it here!
+  const [listener, setListener] = useState(null);
 
   useEffect(() => {
     (async () => {
@@ -138,13 +132,26 @@ function App() {
     <div className="App">
       <div className="hyperbeam-container" ref={hyperbeamContainerRef}></div>
       <div className="canvas-container">
-        <Canvas onContextMenu={(e) => e.preventDefault()}>
+        <Canvas
+          onContextMenu={(e) => e.preventDefault()}
+          onPointerDown={() => {
+            if (listener.context.state === "suspended") {
+              listener.context.resume();
+            }
+          }}
+          onPointerUp={() => {
+            if (listener.context.state === "suspended") {
+              listener.context.resume();
+            }
+          }}
+        >
           {hyperbeamContainerRef.current && embedUrl && (
             <Browser
               container={hyperbeamContainerRef.current}
               embedUrl={embedUrl}
               onPointerEnter={() => setAreControlsEnabled(false)}
               onPointerLeave={() => setAreControlsEnabled(true)}
+              onListenerUpdate={setListener}
             />
           )}
           <OrbitControls makeDefault enabled={areControlsEnabled} />
