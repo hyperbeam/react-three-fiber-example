@@ -83,12 +83,15 @@ function Browser({ container, embedUrl, ...restProps }) {
 }
 
 function App() {
-  const [embedUrl, setEmbedUrl] = useState("");
+  const [embedUrl, setEmbedUrl] = useState(""); // Running locally and have an embed URL? Paste it here!
   const hyperbeamContainerRef = useRef(null);
   const [isControlsEnabled, setIsControlsEnabled] = useState(true);
 
   useEffect(() => {
     (async () => {
+      if (embedUrl) {
+        return;
+      }
       const room = location.pathname.substring(1);
       const response = await fetch(
         `https://demo-api.tutturu.workers.dev/${room}`
