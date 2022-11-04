@@ -93,6 +93,7 @@ function Browser({ container, embedUrl, onListenerUpdate, ...restProps }) {
         attach="material"
         map={texture}
         side={THREE.DoubleSide}
+        toneMapped={false}
       />
       <positionalAudio args={[listener]} ref={audioRef} />
     </mesh>
